@@ -9,9 +9,27 @@
             "command": "make USER_C_MODULES=../../../modules",
             "options": {
                 "cwd": "${workspaceFolder}/micropython/ports/unix"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Clean for tests",
+            "type": "shell",
+            "command": "make clean",
+            "options": {
+                "cwd": "${workspaceFolder}/micropython/ports/unix"
             }
         },
-
+        {
+            "label": "Run testing environment",
+            "type": "shell",
+            "command": "build-standard/micropython",
+            "options": {
+                "cwd": "${workspaceFolder}/micropython/ports/unix"
+            }
+        },
         {
             "label": "Build",
             "type": "shell",
@@ -20,7 +38,6 @@
                 "cwd": "${workspaceFolder}/micropython/ports/rp2"
             }
         },
-
         {
             "label": "Clean",
             "type": "shell",
@@ -29,6 +46,5 @@
                 "cwd": "${workspaceFolder}/micropython/ports/rp2"
             }
         }
-
     ]
 }
