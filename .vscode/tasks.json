@@ -28,7 +28,8 @@
             "command": "build-standard/micropython",
             "options": {
                 "cwd": "${workspaceFolder}/micropython/ports/unix"
-            }
+            },
+            "problemMatcher": []
         },
         {
             "label": "Build",
@@ -36,7 +37,10 @@
             "command": "make USER_C_MODULES=../../../modules/micropython.cmake",
             "options": {
                 "cwd": "${workspaceFolder}/micropython/ports/rp2"
-            }
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
         },
         {
             "label": "Clean",
@@ -45,6 +49,15 @@
             "options": {
                 "cwd": "${workspaceFolder}/micropython/ports/rp2"
             }
+        },
+        {
+            "label": "Flash binary",
+            "type": "shell",
+            "command": "cp rp2/build-RPI_PICO/firmware.uf2 /media/grzegorz/RPI-RP2",
+            "options": {
+                "cwd": "${workspaceFolder}/micropython/ports"
+            },
+            "problemMatcher": []
         }
     ]
 }
