@@ -4,33 +4,36 @@
 // Used to get the time in the Timer class accelerometer.
 #include "py/mphal.h"
 
-#include "extmod/machine_i2c.h"
+#include "hardware/i2c.h"
+#include "hardware/gpio.h"
+
+uint8_t data;
 
 typedef struct _accelerometer_Accelerometer_obj_t {
     mp_obj_base_t base;
-    mp_machine_i2c_p_t i2c;
+    i2c_inst_t *i2c;
     mp_int_t addr;
-    mp_machine_i2c_buf_t buf;
-    uint8_t data[2];
+    uint8_t i2c_idx;
+    uint8_t scl;
+    uint8_t sda;
 } accelerometer_Accelerometer_obj_t;
 
 STATIC mp_obj_t accelerometer_Accelerometer_get_chip_id(mp_obj_t self_in) {
     accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    
-    self->buf.len = 1;
-    self->data[0] = 0x00;
-    self->i2c.transfer((mp_obj_t)&self->i2c, self->addr, 1, &self->buf, 0);
-    self->i2c.transfer((mp_obj_t)&self->i2c, self->addr, 1, &self->buf, MP_MACHINE_I2C_FLAG_READ);
-    
-    return (mp_obj_t) &self->buf;
+    data = 0x00;
+    i2c_write_blocking(self->i2c, self->addr, &data, 1, true);
+    i2c_read_blocking(self->i2c, self->addr, &data, 1, false);
+    return (mp_obj_t) &data;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(accelerometer_Accelerometer_get_chip_id_obj, accelerometer_Accelerometer_get_chip_id);
 
 STATIC mp_obj_t accelerometer_Accelerometer_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    enum { ARG_i2c, ARG_addr };
+    enum { ARG_i2c, ARG_sdo, ARG_scl, ARG_addr };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_i2c,     MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_i2c,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_sdo,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_scl,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_address, MP_ARG_REQUIRED | MP_ARG_INT,  {.u_int = 0} },
     };
     
@@ -38,17 +41,33 @@ STATIC mp_obj_t accelerometer_Accelerometer_make_new(const mp_obj_type_t *type, 
     mp_arg_parse_all_kw_array(n_args, n_kw, args, MP_ARRAY_SIZE(allowed_args), allowed_args, arg_vals);
 
     accelerometer_Accelerometer_obj_t *self = m_new_obj(accelerometer_Accelerometer_obj_t);
+    
     self->base.type = type;
-    self->i2c = *(mp_machine_i2c_p_t*) arg_vals[ARG_i2c].u_obj;
+    
+    self->i2c_idx = arg_vals[ARG_i2c].u_int;
+    self->sda = arg_vals[ARG_sdo].u_int;
+    self->scl = arg_vals[ARG_scl].u_int;
     self->addr = arg_vals[ARG_addr].u_int;
-    self->buf.buf = self->data;
+
+    switch (self->i2c_idx) {
+        case 0: self->i2c = i2c0; break;
+        case 1: self->i2c = i2c1; break;
+        default: break;
+    }
+    
+    gpio_set_function(self->sda, GPIO_FUNC_I2C);
+    gpio_pull_up(self->sda);
+    gpio_set_function(self->scl, GPIO_FUNC_I2C);
+    gpio_pull_up(self->scl);
+    i2c_init(self->i2c, 200000);
 
     return MP_OBJ_FROM_PTR(self);
 }
 
 STATIC void accelerometer_Accelerometer_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_printf(print, "Accelerometer(Address=%u)", self->addr);
+    mp_printf(print, "Accelerometer(I2C%u(SDA=GP%u, SCL=GP%u), Address=%u)",
+        self->i2c_idx, self->sda, self->scl, self->addr);
 }
 
 STATIC const mp_rom_map_elem_t accelerometer_Accelerometer_locals_dict_table[] = {
