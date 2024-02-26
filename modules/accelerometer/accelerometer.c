@@ -4,14 +4,12 @@
 // Used to get the time in the Timer class accelerometer.
 #include "py/mphal.h"
 
-#include "hardware/i2c.h"
-#include "hardware/gpio.h"
+#include "accel_i2c_api.h"
 
 uint8_t data;
 
 typedef struct _accelerometer_Accelerometer_obj_t {
     mp_obj_base_t base;
-    i2c_inst_t *i2c;
     mp_int_t addr;
     uint8_t i2c_idx;
     uint8_t scl;
@@ -20,19 +18,17 @@ typedef struct _accelerometer_Accelerometer_obj_t {
 
 STATIC mp_obj_t accelerometer_Accelerometer_get_chip_id(mp_obj_t self_in) {
     accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    data = 0x00;
-    i2c_write_blocking(self->i2c, self->addr, &data, 1, true);
-    i2c_read_blocking(self->i2c, self->addr, &data, 1, false);
-    return mp_obj_new_int(data);
+
+    return mp_obj_new_int(ACCEL_Read_Register(self->i2c_idx, self->addr, 0));
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(accelerometer_Accelerometer_get_chip_id_obj, accelerometer_Accelerometer_get_chip_id);
 
 STATIC mp_obj_t accelerometer_Accelerometer_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    enum { ARG_i2c, ARG_sdo, ARG_scl, ARG_addr };
+    enum { ARG_i2c, ARG_sda, ARG_scl, ARG_addr };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_i2c,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_sdo,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_sda,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_scl,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_address, MP_ARG_REQUIRED | MP_ARG_INT,  {.u_int = 0} },
     };
@@ -45,21 +41,11 @@ STATIC mp_obj_t accelerometer_Accelerometer_make_new(const mp_obj_type_t *type, 
     self->base.type = type;
     
     self->i2c_idx = arg_vals[ARG_i2c].u_int;
-    self->sda = arg_vals[ARG_sdo].u_int;
+    self->sda = arg_vals[ARG_sda].u_int;
     self->scl = arg_vals[ARG_scl].u_int;
     self->addr = arg_vals[ARG_addr].u_int;
 
-    switch (self->i2c_idx) {
-        case 0: self->i2c = i2c0; break;
-        case 1: self->i2c = i2c1; break;
-        default: break;
-    }
-    
-    gpio_set_function(self->sda, GPIO_FUNC_I2C);
-    gpio_pull_up(self->sda);
-    gpio_set_function(self->scl, GPIO_FUNC_I2C);
-    gpio_pull_up(self->scl);
-    i2c_init(self->i2c, 200000);
+    ACCEL_Initialize_comm(self->i2c_idx, self->sda, self->scl);
 
     return MP_OBJ_FROM_PTR(self);
 }

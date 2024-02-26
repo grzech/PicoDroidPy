@@ -4,6 +4,7 @@ add_library(usermod_accelerometer INTERFACE)
 # Add our source files to the lib
 target_sources(usermod_accelerometer INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/accelerometer.c
+    ${CMAKE_CURRENT_LIST_DIR}/accel_i2c_api.c
 )
 
 # Add the current directory as an include directory.
