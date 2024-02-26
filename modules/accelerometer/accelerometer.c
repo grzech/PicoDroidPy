@@ -23,7 +23,7 @@ STATIC mp_obj_t accelerometer_Accelerometer_get_chip_id(mp_obj_t self_in) {
     data = 0x00;
     i2c_write_blocking(self->i2c, self->addr, &data, 1, true);
     i2c_read_blocking(self->i2c, self->addr, &data, 1, false);
-    return (mp_obj_t) &data;
+    return mp_obj_new_int(data);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(accelerometer_Accelerometer_get_chip_id_obj, accelerometer_Accelerometer_get_chip_id);
