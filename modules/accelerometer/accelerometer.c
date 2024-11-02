@@ -6,7 +6,10 @@
 
 #include "accel_i2c_api.h"
 
-uint8_t data;
+#define RANGE_ADDR 0x22
+#define MEAS_X 0x04
+#define MEAS_Y 0x06
+#define MEAS_Z 0x08
 
 typedef struct _accelerometer_Accelerometer_obj_t {
     mp_obj_base_t base;
@@ -22,7 +25,40 @@ STATIC mp_obj_t accelerometer_Accelerometer_get_chip_id(mp_obj_t self_in) {
     return mp_obj_new_int(ACCEL_Read_Register(self->i2c_idx, self->addr, 0));
 }
 
+STATIC mp_obj_t accelerometer_Accelerometer_set_range(mp_obj_t self_in, mp_obj_t range) {
+    accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    uint8_t rng = mp_obj_get_int(range);
+    uint8_t reg_value = ACCEL_Read_Register(self->i2c_idx, self->addr, RANGE_ADDR);
+    reg_value &= ~0x3;
+    reg_value |= (rng & 0x3);
+    ACCEL_Write_Register(self->i2c_idx, self->addr, RANGE_ADDR, reg_value);
+
+    return MP_ROM_NONE;
+}
+
+STATIC mp_obj_t accelerometer_Accelerometer_read_x(mp_obj_t self_in) {
+    accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    return mp_obj_new_int(ACCEL_Read_Register(self->i2c_idx, self->addr, MEAS_X) >> 2);
+}
+
+STATIC mp_obj_t accelerometer_Accelerometer_read_y(mp_obj_t self_in) {
+    accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    return mp_obj_new_int(ACCEL_Read_Register(self->i2c_idx, self->addr, MEAS_Y) >> 2);
+}
+
+STATIC mp_obj_t accelerometer_Accelerometer_read_z(mp_obj_t self_in) {
+    accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    return mp_obj_new_int(ACCEL_Read_Register(self->i2c_idx, self->addr, MEAS_Z) >> 2);
+}
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(accelerometer_Accelerometer_get_chip_id_obj, accelerometer_Accelerometer_get_chip_id);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(accelerometer_Accelerometer_set_range_obj, accelerometer_Accelerometer_set_range);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(accelerometer_Accelerometer_read_x_obj, accelerometer_Accelerometer_read_x);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(accelerometer_Accelerometer_read_y_obj, accelerometer_Accelerometer_read_y);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(accelerometer_Accelerometer_read_z_obj, accelerometer_Accelerometer_read_z);
 
 STATIC mp_obj_t accelerometer_Accelerometer_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     enum { ARG_i2c, ARG_sda, ARG_scl, ARG_addr };
@@ -58,6 +94,10 @@ STATIC void accelerometer_Accelerometer_print(const mp_print_t *print, mp_obj_t 
 
 STATIC const mp_rom_map_elem_t accelerometer_Accelerometer_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_chip_id), MP_ROM_PTR(&accelerometer_Accelerometer_get_chip_id_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_range), MP_ROM_PTR(&accelerometer_Accelerometer_set_range_obj) },
+    { MP_ROM_QSTR(MP_QSTR_read_x), MP_ROM_PTR(&accelerometer_Accelerometer_read_x_obj) },
+    { MP_ROM_QSTR(MP_QSTR_read_y), MP_ROM_PTR(&accelerometer_Accelerometer_read_y_obj) },
+    { MP_ROM_QSTR(MP_QSTR_read_z), MP_ROM_PTR(&accelerometer_Accelerometer_read_z_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(accelerometer_Accelerometer_locals_dict, accelerometer_Accelerometer_locals_dict_table);
 
