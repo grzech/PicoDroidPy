@@ -7,9 +7,14 @@
 #include "accel_i2c_api.h"
 
 #define RANGE_ADDR 0x22
+#define RANGE_MASK 0x3
 #define MEAS_X 0x04
 #define MEAS_Y 0x06
 #define MEAS_Z 0x08
+#define RANGE_SCALE_2g 0x0
+#define RANGE_SCALE_4g 0x1
+#define RANGE_SCALE_8g 0x2
+#define RANGE_SCALE_16g 0x3
 
 typedef struct _accelerometer_Accelerometer_obj_t {
     mp_obj_base_t base;
@@ -29,8 +34,8 @@ STATIC mp_obj_t accelerometer_Accelerometer_set_range(mp_obj_t self_in, mp_obj_t
     accelerometer_Accelerometer_obj_t *self = MP_OBJ_TO_PTR(self_in);
     uint8_t rng = mp_obj_get_int(range);
     uint8_t reg_value = ACCEL_Read_Register(self->i2c_idx, self->addr, RANGE_ADDR);
-    reg_value &= ~0x3;
-    reg_value |= (rng & 0x3);
+    reg_value &= ~RANGE_MASK;
+    reg_value |= (rng & RANGE_MASK);
     ACCEL_Write_Register(self->i2c_idx, self->addr, RANGE_ADDR, reg_value);
 
     return MP_ROM_NONE;
@@ -113,6 +118,10 @@ MP_DEFINE_CONST_OBJ_TYPE(
 STATIC const mp_rom_map_elem_t accelerometer_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_accelerometer) },
     { MP_ROM_QSTR(MP_QSTR_Accelerometer),    MP_ROM_PTR(&accelerometer_type_Accelerometer) },
+    { MP_ROM_QSTR(MP_QSTR_ACC_RANGE_2G), MP_ROM_INT(RANGE_SCALE_2g) },
+    { MP_ROM_QSTR(MP_QSTR_ACC_RANGE_4G), MP_ROM_INT(RANGE_SCALE_4g) },
+    { MP_ROM_QSTR(MP_QSTR_ACC_RANGE_8G), MP_ROM_INT(RANGE_SCALE_8g) },
+    { MP_ROM_QSTR(MP_QSTR_ACC_RANGE_16G), MP_ROM_INT(RANGE_SCALE_16g) },
 };
 STATIC MP_DEFINE_CONST_DICT(accelerometer_module_globals, accelerometer_module_globals_table);
 
