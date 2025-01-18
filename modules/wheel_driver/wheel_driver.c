@@ -44,6 +44,66 @@ STATIC mp_obj_t wheel_driver_WheelDriver_run(mp_obj_t self_in, const mp_obj_t sp
     return MP_ROM_NONE;
 }
 
+STATIC void turn_vehicle(Wheel_Handle wheel) {
+    uint8_t s = WHEEL_get_speed(wheel);
+    if (s < Wheel_Speed_Slow) {
+        s = 0;
+    } else {
+        s -= 2;
+    }
+    WHEEL_set_speed(wheel, s);
+}
+
+STATIC mp_obj_t wheel_driver_WheelDriver_turn_left(mp_obj_t self_in) {
+    wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    turn_vehicle(self->left);
+
+    return MP_ROM_NONE;
+}
+
+
+STATIC mp_obj_t wheel_driver_WheelDriver_turn_right(mp_obj_t self_in) {
+    wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    turn_vehicle(self->right);
+
+    return MP_ROM_NONE;
+}
+
+STATIC mp_obj_t wheel_driver_WheelDriver_go_straight(mp_obj_t self_in) {
+    wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    uint8_t l = WHEEL_get_speed(self->left);
+    uint8_t r = WHEEL_get_speed(self->right);
+    if (l < r) {
+        WHEEL_set_speed(self->left, r);
+    } else {
+        WHEEL_set_speed(self->right, l);
+    }
+
+    return MP_ROM_NONE;
+}
+
+STATIC mp_obj_t wheel_driver_WheelDriver_go_back(mp_obj_t self_in) {
+    wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    WHEEL_set_reverse(self->left, true);
+    WHEEL_set_reverse(self->right, true);
+
+    return MP_ROM_NONE;
+}
+
+
+STATIC mp_obj_t wheel_driver_WheelDriver_go_forward(mp_obj_t self_in) {
+    wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    WHEEL_set_reverse(self->left, false);
+    WHEEL_set_reverse(self->right, false);
+
+    return MP_ROM_NONE;
+}
+
 STATIC void wheel_driver_WheelDriver_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "WheelDriver(left=(Pin%u, Pin%u) right=(Pin%u, Pin%u))",
@@ -51,10 +111,42 @@ STATIC void wheel_driver_WheelDriver_print(const mp_print_t *print, mp_obj_t sel
         WHEEL_get_engine_pin(self->right), WHEEL_get_reverse_pin(self->right));
 }
 
+STATIC mp_obj_t wheel_driver_WheelDriver_rotate_left(mp_obj_t self_in) {
+    wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    wheel_driver_WheelDriver_go_straight(self);
+    WHEEL_set_reverse(self->left, true);
+    WHEEL_set_reverse(self->right, false);
+
+    return MP_ROM_NONE;
+}
+
+STATIC mp_obj_t wheel_driver_WheelDriver_rotate_right(mp_obj_t self_in) {
+    wheel_driver_WheelDriver_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    wheel_driver_WheelDriver_go_straight(self);
+    WHEEL_set_reverse(self->left, false);
+    WHEEL_set_reverse(self->right, true);
+
+    return MP_ROM_NONE;
+}
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(wheel_driver_WheelDriver_run_obj, wheel_driver_WheelDriver_run);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(wheel_driver_WheelDriver_turn_left_obj, wheel_driver_WheelDriver_turn_left);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(wheel_driver_WheelDriver_turn_right_obj, wheel_driver_WheelDriver_turn_right);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(wheel_driver_WheelDriver_go_straight_obj, wheel_driver_WheelDriver_go_straight);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(wheel_driver_WheelDriver_go_back_obj, wheel_driver_WheelDriver_go_back);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(wheel_driver_WheelDriver_go_forward_obj, wheel_driver_WheelDriver_go_forward);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(wheel_driver_WheelDriver_rotate_left_obj, wheel_driver_WheelDriver_rotate_left);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(wheel_driver_WheelDriver_rotate_right_obj, wheel_driver_WheelDriver_rotate_right);
 
 STATIC const mp_rom_map_elem_t wheel_driver_WheelDriver_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_set_speed), MP_ROM_PTR(&wheel_driver_WheelDriver_run_obj) },
+    { MP_ROM_QSTR(MP_QSTR_left), MP_ROM_PTR(&wheel_driver_WheelDriver_turn_left_obj) },
+    { MP_ROM_QSTR(MP_QSTR_right), MP_ROM_PTR(&wheel_driver_WheelDriver_turn_right_obj) },
+    { MP_ROM_QSTR(MP_QSTR_straight), MP_ROM_PTR(&wheel_driver_WheelDriver_go_straight_obj) },
+    { MP_ROM_QSTR(MP_QSTR_backward), MP_ROM_PTR(&wheel_driver_WheelDriver_go_back_obj) },
+    { MP_ROM_QSTR(MP_QSTR_forward), MP_ROM_PTR(&wheel_driver_WheelDriver_go_forward_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rotate_left), MP_ROM_PTR(&wheel_driver_WheelDriver_rotate_left_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rotate_right), MP_ROM_PTR(&wheel_driver_WheelDriver_rotate_right_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(wheel_driver_WheelDriver_locals_dict, wheel_driver_WheelDriver_locals_dict_table);
